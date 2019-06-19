@@ -21,10 +21,11 @@ step 2
 4. Qa = g1^a * g2^x
 */
 void initObliviousTransfer(){
-  maxBitLength = 128;
-  securityParam = 60;
+  // maxBitLength = 128;
+  // securityParam = 60;
   //Initializing random generator with current time as seed
   seed = (unsigned long int)time(NULL);
+  seed += rand();
   gmp_randinit_mt(state);
   gmp_randseed_ui(state,seed);
 }
@@ -100,37 +101,132 @@ void ComputeDHSharedKey(sharedKey_t sharedKey,blindedsecretKey_t blindedsecretKe
     mpz_powm(sharedKey,blindedsecretKey,secretKey,publicParams.p);
 }
 
-void ComputeSharedTuple(sharedTuple_t* sharedTuple, secretTuple_t* secretTuple, sharedKey_t sharedKey, publicParams_t publicParams, nonDisclosedData_t nonDisclosedData){
-    mpz_init2(sharedTuple->G,maxBitLength);
-    mpz_init2(sharedTuple->Q,maxBitLength);
+void ComputeSecretTuple(secretTuple_t* secretTuple,publicParams_t publicParams){
     mpz_init2(secretTuple->a,maxBitLength);
     mpz_init2(secretTuple->e,maxBitLength);
     
     mpz_t temp;
     mpz_init2(temp,maxBitLength*2);
 
-    mpz_urandomm(secretTuple->a,state, publicParams.p);
-    while(mpz_get_ui(secretTuple->a)==0){
-        mpz_urandomm(secretTuple->a,state, publicParams.p);
-    }
+    mpz_set_ui(secretTuple->a,0);
+    mpz_set_ui(secretTuple->e,0);
+    unsigned long int i;
 
-    mpz_set_ui(temp,securityParam);
-    mpz_urandomm(secretTuple->e,state, temp);
-    while(mpz_get_ui(secretTuple->e)==0){
-        mpz_urandomm(secretTuple->e,state, temp);
-    }
+    for(i=0;i<securityParam;i++){
+      mpz_init2(secretTuple->aArray[i],maxBitLength);
+      mpz_urandomm(secretTuple->aArray[i],state, publicParams.p);
+      while(mpz_get_ui(secretTuple->aArray[i])==0){
+        mpz_urandomm(secretTuple->aArray[i],state, publicParams.p);
+      }
+      
+      mpz_ui_pow_ui(temp,2,i);
+      mpz_mul(temp,secretTuple->aArray[i],temp);
+      mpz_mod(temp,temp,publicParams.p);
+      mpz_add(secretTuple->a,secretTuple->a,temp);
 
-    mpz_powm(sharedTuple->G,sharedKey,secretTuple->a, publicParams.p);
-    mpz_powm(temp,publicParams.g0,secretTuple->e, publicParams.p);
+      mpz_init2(secretTuple->eArray[i],1);
+      mpz_urandomb(secretTuple->eArray[i],state, 1);
+
+      mpz_ui_pow_ui(temp,2,i);
+      mpz_mul(temp,secretTuple->eArray[i],temp);
+      mpz_add(secretTuple->e,secretTuple->e,temp);
+
+    }
+    mpz_mod(secretTuple->a,secretTuple->a,publicParams.p);
+}
+
+void ComputeSecret(secretTuple_t*secretTuple,publicParams_t publicParams){
+    mpz_t temp;
+    mpz_init2(temp,maxBitLength*2);
+    mpz_init2(secretTuple->a,maxBitLength*2);
+    mpz_init2(secretTuple->e,maxBitLength*2);
+
+    mpz_set_ui(secretTuple->a,0);
+    mpz_set_ui(secretTuple->e,0);
+    unsigned long int i;
+
+    for(i=0;i<securityParam;i++){      
+      mpz_ui_pow_ui(temp,2,i);
+      mpz_mul(temp,secretTuple->aArray[i],temp);
+      mpz_mod(temp,temp,publicParams.p);
+      mpz_add(secretTuple->a,secretTuple->a,temp);
+
+      mpz_ui_pow_ui(temp,2,i);
+      mpz_mul(temp,secretTuple->eArray[i],temp);
+      mpz_add(secretTuple->e,secretTuple->e,temp);
+
+    }
+    mpz_mod(secretTuple->a,secretTuple->a,publicParams.p);
+}
+
+void ComputeSharedTuple(sharedTuple_t* sharedTuple, secretTuple_t secretTuple, sharedKey_t sharedKey, publicParams_t publicParams, nonDisclosedData_t nonDisclosedData){
+    mpz_init2(sharedTuple->G,maxBitLength);
+    mpz_init2(sharedTuple->Q,maxBitLength);
+
+    mpz_t temp;
+    mpz_init2(temp,maxBitLength*2);
+
+    int i;
+    for(i=0;i<securityParam;i++){
+      mpz_init2(sharedTuple->B[i],maxBitLength);
+          mpz_powm(sharedTuple->B[i],sharedKey,secretTuple.aArray[i], publicParams.p);
+          mpz_powm(temp,publicParams.g0,secretTuple.eArray[i], publicParams.p);
+          mpz_mul(temp,temp,sharedTuple->B[i]);
+          mpz_mod(sharedTuple->B[i],temp,publicParams.p);
+          
+    }
+    
+    mpz_powm(sharedTuple->G,sharedKey,secretTuple.a, publicParams.p);
+    mpz_powm(temp,publicParams.g0,secretTuple.e, publicParams.p);
     mpz_mul(temp,temp,sharedTuple->G);
     mpz_mod(sharedTuple->G,temp,publicParams.p);
     
     
-    mpz_powm(sharedTuple->Q,publicParams.g1,secretTuple->a, publicParams.p);
+    mpz_powm(sharedTuple->Q,publicParams.g1,secretTuple.a, publicParams.p);
     mpz_set_ui(temp,nonDisclosedData);
     mpz_powm(temp,publicParams.g2,temp, publicParams.p);
     mpz_mul(temp,temp,sharedTuple->Q);
     mpz_mod(sharedTuple->Q,temp,publicParams.p);
+}
+
+int ValidatePartofSecret(mpz_t a,mpz_t e,mpz_t B,sharedKey_t sharedKey,publicParams_t publicParams){
+    mpz_t tempB,temp;
+    mpz_init2(tempB,maxBitLength*2);
+    mpz_init2(temp,maxBitLength*2);
+    mpz_powm(tempB,sharedKey,a, publicParams.p);
+    mpz_powm(temp,publicParams.g0,e, publicParams.p);
+    mpz_mul(temp,temp,tempB);
+    mpz_mod(tempB,temp,publicParams.p);
+  
+  return mpz_cmp(B,tempB);
+  
+}
+
+int ValidateKnowledgeOfSecret(sharedTuple_t sharedTuple,publicParams_t publicParams){
+    mpz_t temp,temp1,tempB;
+    mpz_init2(temp,maxBitLength*2);
+    mpz_init2(temp1,maxBitLength);
+    mpz_init2(tempB,maxBitLength*2);
+
+    mpz_set_ui(tempB,1);
+    int i;
+    for(i=0;i<securityParam;i++){
+        mpz_ui_pow_ui(temp1,2,i);
+        
+        mpz_powm(temp,sharedTuple.B[i],temp1,publicParams.p);
+        mpz_mul(tempB,temp,tempB);
+       
+    }
+    mpz_mod(tempB,tempB,publicParams.p);
+
+    int result;
+
+    result = mpz_cmp(tempB,sharedTuple.G);
+    return result;
+}
+
+int ValidateStreamValue(sharedTuple_t sharedTuple){
+  
 }
 
 void ComputeBlindR(blindedsecretKey_t blindedR,sharedTuple_t sharedTuple1,sharedTuple_t sharedTuple2 ,secretKey_t secretKey,publicParams_t publicParams){

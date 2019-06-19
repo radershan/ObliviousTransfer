@@ -11,3 +11,11 @@ bin-release/
 # information for Eclipse / Flash Builder.
 
 ot
+
+*.bin
+
+*.ipch
+
+uTest\.c
+
+test

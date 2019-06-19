@@ -15,7 +15,7 @@ int main(){
     blindedsecretKey_t blindedRA;
     sharedKey_t sharedRA;   
 
-    //Alice
+    //Bob
     secretKey_t secretKeyB;
     blindedsecretKey_t blindedSecretKeyB;
     sharedKey_t sharedKeyB;
@@ -34,7 +34,7 @@ int main(){
     mpz_out_str(stdout,10,publicParam.g0);
     printf("\r\ng1 :");
     mpz_out_str(stdout,10,publicParam.g1);
-    printf("\r\ng0 :");
+    printf("\r\ng2 :");
     mpz_out_str(stdout,10,publicParam.g2);
     printf("\r\n");
 
@@ -68,29 +68,83 @@ int main(){
     mpz_out_str(stdout,10,sharedKeyB);
     printf("\r\n");
 
-    ComputeSharedTuple(&sharedTupleA,&secretTupleA,sharedKeyA,publicParam,505581);
+
+    ComputeSecretTuple(&secretTupleA,publicParam);
     printf("Alice Secret Tuple a: ");
     mpz_out_str(stdout,10,secretTupleA.a);
     printf("\t e:");
     mpz_out_str(stdout,10,secretTupleA.e);
     printf("\r\n");
+    ComputeSecret(&secretTupleA,publicParam);
+    ComputeSharedTuple(&sharedTupleA,secretTupleA,sharedKeyA,publicParam,50);
     printf("Alice Shared Tuple G: ");
     mpz_out_str(stdout,10,sharedTupleA.G);
     printf("\t Q:");
     mpz_out_str(stdout,10,sharedTupleA.Q);
     printf("\r\n");
+    int i;
+    printf("B :");
+    for(i=0;i<securityParam;i++){
+        mpz_out_str(stdout,10,sharedTupleA.B[i]);
+        printf("  ");
+    }
+    printf("\r\n");
 
-    ComputeSharedTuple(&sharedTupleB,&secretTupleB,sharedKeyB,publicParam,505581);
+    ComputeSecretTuple(&secretTupleB,publicParam);
     printf("Bob Secret Tuple a: ");
     mpz_out_str(stdout,10,secretTupleB.a);
     printf("\t e:");
     mpz_out_str(stdout,10,secretTupleB.e);
     printf("\r\n");
+    ComputeSecret(&secretTupleB,publicParam);
+    ComputeSharedTuple(&sharedTupleB,secretTupleB,sharedKeyB,publicParam,50);
     printf("Bob Shared Tuple G: ");
     mpz_out_str(stdout,10,sharedTupleB.G);
     printf("\t Q:");
     mpz_out_str(stdout,10,sharedTupleB.Q);
     printf("\r\n");
+        printf("B :");
+    for(i=0;i<securityParam;i++){
+        mpz_out_str(stdout,10,sharedTupleB.B[i]);
+        printf("  ");
+    }
+    printf("\r\n");
+
+    int k;
+    for(k=0;k<securityParam;k++){
+        if(ValidatePartofSecret(secretTupleA.aArray[k],secretTupleA.eArray[k],sharedTupleA.B[k],sharedKeyA,publicParam)){
+            printf("Alice %d failed\r\n",k);
+        }
+        else{
+            printf("Alice %d passed\r\n",k);
+        }
+    }
+
+    for(k=0;k<securityParam;k++){
+        if(ValidatePartofSecret(secretTupleB.aArray[k],secretTupleB.eArray[k],sharedTupleB.B[k],sharedKeyB,publicParam)){
+            printf("Bob %d failed\r\n",k);
+        }
+        else{
+            printf("Bob %d passed\r\n",k);
+        }
+    }
+
+    int validate;
+    validate = ValidateKnowledgeOfSecret(sharedTupleA,publicParam);
+    if(validate){
+        printf("Alice's Knowledge of a,e not validated\r\n ");
+    }
+    else{
+          printf("Alice's Knowledge of a,e validated\r\n ");
+    }
+
+    validate = ValidateKnowledgeOfSecret(sharedTupleB,publicParam);
+    if(validate){
+        printf("Bob's Knowledge of e,f not validated\r\n ");
+    }
+    else{
+          printf("Bob's Knowledge of e,f validated\r\n ");
+    }
 
     ComputeBlindR(blindedRA,sharedTupleA,sharedTupleB,secretKeyA,publicParam);
     printf("Alice Blined R: ");

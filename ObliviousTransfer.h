@@ -5,9 +5,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+
+#define securityParam   80
 //Maximum bit length of the scheme
-int maxBitLength;
-int securityParam;
+#define maxBitLength    128
+
+
 
 //Global state of random generator
 gmp_randstate_t state;
@@ -24,11 +27,15 @@ typedef int nonDisclosedData_t;
 
 typedef struct sharedTuple_t{
     mpz_t G,Q;
+    mpz_t B[securityParam];
 }sharedTuple_t;
 
 typedef struct secretTuple_t{
     mpz_t a,e;
+    mpz_t aArray[securityParam];
+    mpz_t eArray[securityParam];
 }secretTuple_t;
+
 
 void initObliviousTransfer();
 
@@ -40,7 +47,15 @@ void ComputeBlindSecretKey(blindedsecretKey_t,secretKey_t,publicParams_t);
 
 void ComputeDHSharedKey(sharedKey_t,blindedsecretKey_t,secretKey_t,publicParams_t);
 
-void ComputeSharedTuple(sharedTuple_t*,secretTuple_t*, sharedKey_t, publicParams_t, nonDisclosedData_t);
+void ComputeSecretTuple(secretTuple_t*,publicParams_t);
+
+void ComputeSecret(secretTuple_t*,publicParams_t);
+
+int ValidatePartofSecret(mpz_t,mpz_t,mpz_t,sharedKey_t,publicParams_t);
+
+void ComputeSharedTuple(sharedTuple_t*,secretTuple_t, sharedKey_t, publicParams_t, nonDisclosedData_t);
+
+int ValidateKnowledgeOfSecret(sharedTuple_t,publicParams_t);
 
 void ComputeBlindR(blindedsecretKey_t,sharedTuple_t,sharedTuple_t,secretKey_t,publicParams_t);
 
