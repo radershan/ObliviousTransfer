@@ -120,7 +120,18 @@ void SetAEValue(char* strA, char* strE, int index){
     mpz_set_str(secretTupleB.eArray[index],strE,10);     
 }
 
-int ValidateKnowledge(char* strB, char* stra, char* stre){
+void SetBValue(char* strB, int index){
+    mpz_init2(sharedTupleB.B[index],maxBitLength);
+    mpz_set_str(sharedTupleB.B[index],strB,10);     
+}
+
+int ValidateKnowledgeOfB(){
+    int validate;
+    validate = ValidateKnowledgeOfSecret(sharedTupleB,publicParam);
+    return !validate;
+}
+
+int ValidateKnowledge(char* strB, char* stra, char* stre,int i){
     mpz_t B,a,e;
     mpz_init2(B,maxBitLength);
     mpz_init2(a,maxBitLength);
@@ -130,7 +141,7 @@ int ValidateKnowledge(char* strB, char* stra, char* stre){
     mpz_set_str(a,stra,10);
     mpz_set_str(e,stre,10);
     int result;
-    result = ValidatePartofSecret(a,e,B,sharedKey,publicParam);
+    result = ValidatePartofSecret(a,e,B,i,sharedKey,publicParam);
     return !result;
 }
 

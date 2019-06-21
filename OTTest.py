@@ -90,9 +90,19 @@ bobBi = []
 for i in range(securityParam):
     aliceBi.append(alice.GetBValue(i))
     bobBi.append(bob.GetBValue(i))
+    alice.SetBValue(bob.GetBValue(i),i)
+    bob.SetBValue(alice.GetBValue(i),i)
 
 #P Should be validate with series of B
-# Not implemented yet
+if(alice.ValidateKnowledgeOfB()):
+    print "Alice knowledge of B Validated"
+else:
+    print "Alice knowledge of B not Validated"
+
+if(bob.ValidateKnowledgeOfB()):
+    print "Bob knowledge of B Validated"
+else:
+    print "Bob knowledge of B not Validated"
 
 #Get Blined R value
 aliceBR = alice.GetBlinedR()
@@ -110,16 +120,18 @@ bobEi = []
 for i in range(securityParam):
     aliceAi.append(alice.GetAValue(i))
     aliceEi.append(alice.GetEValue(i))
-    if(alice.ValidateKnowledge(aliceBi[i],aliceAi[i],aliceEi[i])):
-        print "Alice knowledge of Secret", i, "passed"
+    if(alice.ValidateKnowledge(aliceBi[i],aliceAi[i],aliceEi[i],i)):
+        k =1
+        # print "Alice knowledge of Secret", i, "passed"
     else:
         print "Alice knowledge of Secret",  i, "failed"
     
     bobAi.append(bob.GetAValue(i))
 
     bobEi.append(bob.GetEValue(i))
-    if(bob.ValidateKnowledge(bobBi[i],bobAi[i],bobEi[i])):
-        print "Bob knowledge of Secret", i, "passed"
+    if(bob.ValidateKnowledge(bobBi[i],bobAi[i],bobEi[i],i)):
+        k =1
+        # print "Bob knowledge of Secret", i, "passed"
     else:
         print "Bob knowledge of Secret", i, "failed"
 

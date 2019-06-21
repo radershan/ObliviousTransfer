@@ -112,7 +112,7 @@ int main(){
 
     int k;
     for(k=0;k<securityParam;k++){
-        if(ValidatePartofSecret(secretTupleA.aArray[k],secretTupleA.eArray[k],sharedTupleA.B[k],sharedKeyA,publicParam)){
+        if(ValidatePartofSecret(secretTupleA.aArray[k],secretTupleA.eArray[k],sharedTupleA.B[k],k,sharedKeyA,publicParam)){
             printf("Alice %d failed\r\n",k);
         }
         else{
@@ -121,7 +121,7 @@ int main(){
     }
 
     for(k=0;k<securityParam;k++){
-        if(ValidatePartofSecret(secretTupleB.aArray[k],secretTupleB.eArray[k],sharedTupleB.B[k],sharedKeyB,publicParam)){
+        if(ValidatePartofSecret(secretTupleB.aArray[k],secretTupleB.eArray[k],sharedTupleB.B[k],k,sharedKeyB,publicParam)){
             printf("Bob %d failed\r\n",k);
         }
         else{
